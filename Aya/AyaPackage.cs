@@ -2,6 +2,7 @@
 global using Microsoft.VisualStudio.Shell;
 global using System;
 global using Task = System.Threading.Tasks.Task;
+using EnvDTE80;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.VisualStudio;
 using StreamJsonRpc;
@@ -14,18 +15,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Notifications;
-
 namespace Aya
 {
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("Aya", Vsix.Description, Vsix.Version)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(PackageGuids.AyaString)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideOptionPage(typeof(OptionsProvider.GeneralOptions), "Aya", "General", 0, 0, true, SupportsProfiles = true)]
     public sealed class AyaPackage : ToolkitPackage
     {
-        public static int _interval;
+        public static int _interval = GetDuration()*30*60*1000;
         private static System.Timers.Timer _timer;
         private static string ayaNum, sorahNum;
         public static Dictionary<int, string> quranSorahs = new Dictionary<int, string>
@@ -150,14 +150,13 @@ namespace Aya
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             General.Saved += OnOptionsSaved;
-            _interval = GetDuration();
             SetTimer();
         }
-        public static async void ShowNotification(Object o, EventArgs e)
+        public static async void ShowNotification(Object o = null, EventArgs e = null)
         {
             var str = "";
             var path1 = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            var path = Path.GetFullPath(Path.Combine(path1, @"..\"))+"Resources\\logo-no-background.png";
+            var path = Path.GetFullPath(Path.Combine(path1, @"..\"))+"Resources\\notification-logo.png";
             try
             {
                 str = await ReadAsync();
@@ -166,20 +165,29 @@ namespace Aya
             {
                 Console.WriteLine(ex.StackTrace);
             }
-            sorahNum = str.Split('|')[0];
-            ayaNum = str.Split('|')[1];
-            new ToastContentBuilder()
-            .SetToastScenario(ToastScenario.Reminder)
-            .AddText(quranSorahs[int.Parse(str.Split('|')[0])]+" : آية "+ayaNum)
-            .AddText(str.Split('|')[2])
-            .AddAppLogoOverride(new Uri(path))
-            .AddButton(new ToastButton().SetContent("تفسير الآية").AddArgument(key: "action", "tafseer"))
-            .AddButton(new ToastButton().SetContent("أغلق").AddArgument("action", "dismiss"))
-            .AddAudio(null, null, true)
-            .Show(t => {
-                t.ExpirationTime = DateTime.Now.AddSeconds(10);
-                t.Activated += HandleToastActivation;
-            });
+            try
+            {
+                sorahNum = str.Split('|')[0];
+                ayaNum = str.Split('|')[1];
+                new ToastContentBuilder()
+                .SetToastScenario(ToastScenario.Default)
+                .SetToastDuration(ToastDuration.Long)
+                .AddArgument("action", "dismiss")
+                .AddText(quranSorahs[int.Parse(str.Split('|')[0])]+" : "+ayaNum)
+                .AddText(str.Split('|')[2])
+                .AddAppLogoOverride(new Uri(path))
+                .AddButton(new ToastButton().SetContent("تفسير الآية").AddArgument(key: "action", "tafseer"))
+                .AddButton(new ToastButton().SetContent("أغلق").AddArgument("action", "dismiss"))
+                .AddAudio(null, null, true)
+                .Show(t => {
+                    t.ExpirationTime = DateTime.Now.AddSeconds(30);
+                    t.Activated += HandleToastActivation;
+                });
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex.StackTrace);
+            }
+            
         }
         public static async Task<string> ReadAsync()
         {
@@ -188,7 +196,7 @@ namespace Aya
             var path = Path.GetFullPath(Path.Combine(path1, @"..\"))+"Resources\\quran.txt";
             StreamReader sr = new StreamReader(path);
             Random rnd = new Random();
-            int random = rnd.Next(6235);
+            int random = rnd.Next(4749);
             for (int i = 0; i < random; i++)
             {
                 await sr.ReadLineAsync();
@@ -197,19 +205,27 @@ namespace Aya
         }
         public static async Task<General> GetOptionsAsync()
         {
-            General option = await General.GetLiveInstanceAsync();
-            return option;
+            return await General.GetLiveInstanceAsync();
         }
         public static int GetDuration()
         {
-            var option = GetOptionsAsync().Result;
-            var duration = option.duration;
-            return duration;
+            return GetOptionsAsync().Result.duration;
         }
         private void OnOptionsSaved(General e)
         {
-            var option = GetOptionsAsync().Result;
-            _timer.Interval = GetDuration();
+            var options = GetOptionsAsync().Result;
+            var duration = GetDuration();
+            if (duration>120)
+            {
+                options.duration = 120;
+                options.Save();
+            }
+            else if (duration <20)
+            {
+                options.duration = 20;
+                options.Save();
+            }
+            _timer.Interval = GetDuration()*60*1000;
         }
         public static void SetTimer()
         {
@@ -229,13 +245,10 @@ namespace Aya
                     proc.StartInfo.UseShellExecute = true;
                     proc.StartInfo.FileName = $"http://quran.ksu.edu.sa/tafseer/katheer/sura{sorahNum}-aya{ayaNum}.html";
                     proc.Start();
-                    //stuff
                     break;
                 case "dismiss":
-                    //stuff
                     break;
                 case "bodyTapped":
-                    //stuff
                     break;
             }
 

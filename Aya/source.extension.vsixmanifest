@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
 	<Metadata>
-		<Identity Id="Aya.31d3531e-cb30-43c0-8483-f7e5a446d600" Version="1.1" Language="en-US" Publisher="mohab mohammad" />
+		<Identity Id="Aya.31d3531e-cb30-43c0-8483-f7e5a446d600" Version="1.1" Language="en-US" Publisher="Mohab Elrouby" />
 		<DisplayName>Aya</DisplayName>
-		<Description xml:space="preserve">This extension reminds the user of quran by showing a verse (Aya) from quran every once in a while.
-the extension loads and starts automatically with default reminder every 15 minutes.
-
-to change the duration at which you get reminded got to:
-Tools menu &gt; "
-</Description>
-		<Icon>Resources\logo-no-background.png</Icon>
-		<PreviewImage>Resources\logo-no-background.png</PreviewImage>
+		<Description xml:space="preserve">Stay connected to quran with Aya, the extension displays a verse from quran every once in a while</Description>
+		<Icon>Resources\notification-logo.png</Icon>
+		<PreviewImage>Resources\notification-logo.png</PreviewImage>
 	</Metadata>
 	<Installation>
 		<InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">

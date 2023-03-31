@@ -15,9 +15,9 @@ namespace Aya
     {
         [Category("Aya")]
         [DisplayName("Duration")]
-        [Description("Set duration for how often you want to see an Aya")]
-        [DefaultValue(100000)]
-        public int duration { get; set; }
+        [Description("Set how often you want to see an Aya (minutes), Maximum value is 120 and minimum is 20 minutes. the default value is 30 minutes")]
+        [DefaultValue(30)]
+        public int duration { get; set; } = 30;
         
     }
 }
